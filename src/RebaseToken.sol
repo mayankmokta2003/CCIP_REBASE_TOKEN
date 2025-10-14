@@ -6,9 +6,8 @@ import {ERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.s
 import {Ownable} from "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import {AccessControl} from "../lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
 
-contract RebaseToken is ERC20 ,Ownable,AccessControl {
+contract RebaseToken is ERC20, Ownable, AccessControl {
     error RebaseToken__InterestRateCanOnlyDecrease(uint256 oldInterestRate, uint256 newInterestRate);
-    
 
     uint256 private constant PRECISION_FACTOR = 1e18;
     // uint256 private s_interestRate = 5e10;
@@ -21,29 +20,27 @@ contract RebaseToken is ERC20 ,Ownable,AccessControl {
 
     constructor() ERC20("Rebase Token", "RBT") Ownable(msg.sender) {}
 
-
-    function grantMintAndBurnRole(address account) external onlyOwner{
-        _grantRole(BURN_AND_MINT_ROLE,account);
+    function grantMintAndBurnRole(address account) external onlyOwner {
+        _grantRole(BURN_AND_MINT_ROLE, account);
     }
 
-    function setInterestRate(uint256 newInterestRate) external onlyOwner{
+    function setInterestRate(uint256 newInterestRate) external onlyOwner {
         if (s_interestRate < newInterestRate) {
             revert RebaseToken__InterestRateCanOnlyDecrease(s_interestRate, newInterestRate);
-            
         }
         s_interestRate = newInterestRate;
         emit InterestRateSet(newInterestRate);
     }
 
-    function mint(address _to, uint256 _amount) external onlyRole(BURN_AND_MINT_ROLE){
+    function mint(address _to, uint256 _amount,uint256 _userInterestRate) external onlyRole(BURN_AND_MINT_ROLE) {
         // here first we will check if the user has not already minted before and now again minting so
         // if users again minting we want to apply the new interest rate not the previous one
         _mintAccruedInterest(_to);
-        s_userInterestRate[_to] = s_interestRate;
+        s_userInterestRate[_to] = _userInterestRate;
         super._mint(_to, _amount);
     }
 
-    function burn(address _from, uint256 _amount) external onlyRole(BURN_AND_MINT_ROLE){
+    function burn(address _from, uint256 _amount) external onlyRole(BURN_AND_MINT_ROLE) {
         // if (_amount == type(uint256).max) {
         //     _amount = balanceOf(_from);
         // }
@@ -108,29 +105,31 @@ contract RebaseToken is ERC20 ,Ownable,AccessControl {
         return super.transfer(recipient, amount);
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) public override returns(bool){
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
         _mintAccruedInterest(sender);
         _mintAccruedInterest(recipient);
 
-        if(amount == type(uint256).max){
+        if (amount == type(uint256).max) {
             amount = balanceOf(sender);
         }
 
-        if(balanceOf(recipient) == 0){
+        if (balanceOf(recipient) == 0) {
             s_userInterestRate[recipient] = s_userInterestRate[sender];
         }
-        return super.transferFrom(sender,recipient,amount);
-
+        return super.transferFrom(sender, recipient, amount);
     }
     // pb is the balance without any interest rate added suppose you gave 100 tokens in inetrest rate of 5%
     // so your principle balance is 100.
-    function getPrincipleBalance(address user) external view returns(uint256){
+
+    function getPrincipleBalance(address user) external view returns (uint256) {
         return super.balanceOf(user);
     }
-    function getContractInterestrate() external view returns (uint256){
+
+    function getContractInterestrate() external view returns (uint256) {
         return s_interestRate;
     }
-    
 
-
+    function getInterestRate() external view returns(uint256){
+        return s_interestRate;
+    }
 }
