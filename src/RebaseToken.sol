@@ -32,7 +32,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
         emit InterestRateSet(newInterestRate);
     }
 
-    function mint(address _to, uint256 _amount,uint256 _userInterestRate) external onlyRole(BURN_AND_MINT_ROLE) {
+    function mint(address _to, uint256 _amount, uint256 _userInterestRate) external onlyRole(BURN_AND_MINT_ROLE) {
         // here first we will check if the user has not already minted before and now again minting so
         // if users again minting we want to apply the new interest rate not the previous one
         _mintAccruedInterest(_to);
@@ -129,7 +129,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
         return s_interestRate;
     }
 
-    function getInterestRate() external view returns(uint256){
+    function getInterestRate() external view returns (uint256) {
         return s_interestRate;
     }
 }
